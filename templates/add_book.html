@@ -1,0 +1,26 @@
+<form action="/add_book" method="POST" enctype="multipart/form-data">
+    <input type="text" name="title" placeholder="Book Title" required>
+    <input type="text" name="author" placeholder="Author Name" required>
+    
+    <label>Book Type:</label>
+    <select name="book_type" id="typeSelector" onchange="toggleUpload()">
+        <option value="Physical">Physical</option>
+        <option value="Digital">Digital (PDF/EPUB)</option>
+    </select>
+
+    <!-- Hidden by default, shows only if 'Digital' is selected -->
+    <div id="fileUploadSection" style="display:none;">
+        <label>Upload File:</label>
+        <input type="file" name="book_file">
+    </div>
+
+    <button type="submit">List Book</button>
+</form>
+
+<script>
+function toggleUpload() {
+    var type = document.getElementById("typeSelector").value;
+    var section = document.getElementById("fileUploadSection");
+    section.style.display = (type === "Digital") ? "block" : "none";
+}
+</script>
