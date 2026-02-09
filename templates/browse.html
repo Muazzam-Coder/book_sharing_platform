@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2 class="text-3xl font-bold mb-8">Library Explorer</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for book in books %}
+    <div class="bg-white/60 rounded-3xl border border-white/40 shadow-sm overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300">
+        <!-- Book Cover Image -->
+        <div class="h-48 overflow-hidden relative">
+            <img src="{{ book.image_url or 'https://via.placeholder.com/400x200' }}" 
+                 alt="Cover" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 flex gap-1">
+                <span class="text-[10px] font-bold uppercase px-2 py-1 bg-white/90 backdrop-blur-md text-blue-600 rounded-lg shadow-sm">
+                    {{ book.book_type }}
+                </span>
+            </div>
+        </div>
+
+        <div class="p-5 flex-1 flex flex-col">
+            <h3 class="text-lg font-extrabold text-gray-800 leading-tight">{{ book.title }}</h3>
+            <p class="text-xs text-gray-500 mb-4 font-medium">by {{ book.author }}</p>
+            
+            <div class="mt-auto">
+                {% if book.owner_id != current_user.id and book.status == 'Available' %}
+                    <form action="/borrow/{{ book.id }}" method="POST" class="space-y-3">
+                        {% if book.book_type == 'Physical' %}
+                            <input type="text" name="location" placeholder="Meeting Point" class="w-full text-xs p-2 rounded-lg border bg-white/50" required>
+                            <input type="date" name="date" class="w-full text-xs p-2 rounded-lg border bg-white/50" required>
+                        {% endif %}
+                        <button type="submit" class="win-btn w-full py-2.5 text-xs font-bold uppercase tracking-wider">Borrow Now</button>
+                    </form>
+                {% elif book.owner_id == current_user.id %}
+                    <div class="text-center py-2 bg-gray-100/50 rounded-lg text-xs font-bold text-gray-400">YOUR BOOK</div>
+                {% else %}
+                    <div class="text-center py-2 bg-orange-50 rounded-lg text-xs font-bold text-orange-400">CURRENTLY BORROWED</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

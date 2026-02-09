@@ -1,8 +1,81 @@
-{% extends "layout.html" %}
-
+{% extends 'layout.html' %}
 {% block content %}
-<div class="container">
-    <h1>Welcome, {{ current_user.username }}</h1>
-    <!-- ... rest of your dashboard code ... -->
+<div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800">Your Dashboard</h2>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+    
+    <!-- LEFT COLUMN: ADD NEW BOOK -->
+    <div class="bg-white/40 p-8 rounded-3xl border border-white/60 shadow-inner">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-blue-600"></i> List a New Book
+        </h3>
+        <form action="/add_book" method="POST" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" name="title" placeholder="Book Title" class="w-full p-3 rounded-xl border bg-white/50 focus:ring-2 focus:ring-blue-400 outline-none transition" required>
+                <input type="text" name="author" placeholder="Author" class="w-full p-3 rounded-xl border bg-white/50 focus:ring-2 focus:ring-blue-400 outline-none transition" required>
+            </div>
+            
+            <input type="text" name="image_url" placeholder="Cover Image URL (Unsplash or Web link)" class="w-full p-3 rounded-xl border bg-white/50 focus:ring-2 focus:ring-blue-400 outline-none transition">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <select name="book_type" class="w-full p-3 rounded-xl border bg-white/50 outline-none">
+                    <option value="Physical">Physical Book</option>
+                    <option value="Digital">Digital (PDF/Link)</option>
+                </select>
+                <input type="text" name="category" placeholder="Genre (e.g. Sci-Fi)" class="w-full p-3 rounded-xl border bg-white/50 focus:ring-2 focus:ring-blue-400 outline-none transition">
+            </div>
+
+            <div class="bg-blue-50/50 p-4 rounded-2xl space-y-3">
+                <p class="text-[10px] font-bold text-blue-600 uppercase">Type Specific Info</p>
+                <input type="text" name="location" placeholder="Meeting Location (if physical)" class="w-full p-3 rounded-xl border bg-white focus:ring-2 focus:ring-blue-400 outline-none transition">
+                <input type="text" name="file_link" placeholder="Download Link (if digital)" class="w-full p-3 rounded-xl border bg-white focus:ring-2 focus:ring-blue-400 outline-none transition">
+            </div>
+
+            <button type="submit" class="win-btn w-full py-4 font-bold uppercase tracking-widest shadow-lg shadow-blue-500/30">
+                Confirm & List Book
+            </button>
+        </form>
+    </div>
+
+    <!-- RIGHT COLUMN: INCOMING REQUESTS -->
+    <div class="space-y-6">
+        <div class="mica p-6 border-l-4 border-blue-500">
+            <h3 class="text-xl font-bold mb-4">Incoming Requests</h3>
+            {% for req in incoming %}
+            <div class="flex items-center justify-between bg-white/60 p-4 rounded-2xl mb-3 border border-white">
+                <div>
+                    <p class="font-bold text-gray-800">{{ req.book.title }}</p>
+                    <p class="text-xs text-gray-500">From: {{ req.borrower.username }}</p>
+                    <p class="text-[10px] text-blue-600 mt-1 italic">{{ req.meeting_details }}</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/action/{{req.id}}/accept" class="p-2 bg-green-500 text-white rounded-lg hover:scale-110 transition"><i class="fa-solid fa-check"></i></a>
+                    <a href="#" class="p-2 bg-red-500 text-white rounded-lg hover:scale-110 transition"><i class="fa-solid fa-xmark"></i></a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-10">
+                <i class="fa-solid fa-inbox text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-400 text-sm italic">No pending requests yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- MY LISTED BOOKS -->
+        <div class="mica p-6">
+            <h3 class="text-xl font-bold mb-4">My Shared Library</h3>
+            <div class="grid grid-cols-2 gap-4">
+                {% for book in my_books %}
+                <div class="bg-white/40 p-3 rounded-xl border border-white/50 text-center">
+                    <img src="{{ book.image_url }}" class="w-full h-24 object-cover rounded-lg mb-2">
+                    <p class="text-xs font-bold truncate">{{ book.title }}</p>
+                    <p class="text-[10px] text-gray-500 uppercase">{{ book.status }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

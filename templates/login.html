@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: url('https://i.imgur.com/3mY9I5k.jpg') center/cover no-repeat;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .mica-login {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            width: 400px; padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="mica-login">
+        <div class="flex flex-col items-center mb-8">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl mb-4 shadow-lg shadow-blue-500/50"></div>
+            <h1 class="text-2xl font-bold text-gray-800">
+                {% if register %}Create Account{% else %}Sign In{% endif %}
+            </h1>
+            <p class="text-xs text-gray-500 mt-1">Book Sharing Platform v2026</p>
+        </div>
+
+        <form method="POST" action="{% if register %}/register{% else %}/login{% endif %}" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase">Username</label>
+                <input type="text" name="username" class="w-full p-3 rounded-lg border bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" required>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase">Password</label>
+                <input type="password" name="password" class="w-full p-3 rounded-lg border bg-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" required>
+            </div>
+            
+            <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transform hover:scale-[1.02] transition active:scale-95">
+                {% if register %}Register{% else %}Login{% endif %}
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            {% if register %}
+                <a href="/login" class="text-sm text-blue-600 hover:underline">Already have an account? Login</a>
+            {% else %}
+                <a href="/register" class="text-sm text-blue-600 hover:underline">New here? Create an account</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

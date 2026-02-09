@@ -1,186 +1,145 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, send_from_directory
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from models import db, User, Book, BorrowRequest
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from functools import wraps
 import os
+from flask import Flask, render_template, redirect, url_for, request, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///books.db'
-app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'epub', 'txt'}
+app.config['SECRET_KEY'] = 'win11_secret_key_2026'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+db = SQLAlchemy(app)
 
-db.init_app(app)
+# --- Models ---
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(10), default='Member')
 
+class Book(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    author = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50))
+    book_type = db.Column(db.String(10)) 
+    status = db.Column(db.String(20), default='Available')
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    file_link = db.Column(db.String(200))
+    location = db.Column(db.String(100))
+    image_url = db.Column(db.String(500))
+
+class Request(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
+    borrower_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default='Pending')
+    meeting_details = db.Column(db.String(200))
+    book = db.relationship('Book', backref='requests')
+    borrower = db.relationship('User', backref='my_requests')
+
+# --- Auth Setup ---
 login_manager = LoginManager()
-login_manager.login_view = 'login' # Tells flask where to go if not logged in
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- AUTHENTICATION ROUTES (REQUIRED) ---
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        hashed_pw = generate_password_hash(request.form.get('password'))
-        # Check if first user, make them admin
-        is_first = User.query.count() == 0
-        new_user = User(username=request.form.get('username'), 
-                        email=request.form.get('email'), 
-                        password=hashed_pw,
-                        is_admin=is_first)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('login'))
-    return render_template('register.html')
+# --- Routes ---
+@app.route('/')
+def index():
+    return redirect(url_for('browse'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(email=request.form.get('email')).first()
-        if user and check_password_hash(user.password, request.form.get('password')):
+        user = User.query.filter_by(username=request.form['username']).first()
+        if user and check_password_hash(user.password, request.form['password']):
             login_user(user)
-            return redirect(url_for('dashboard'))
-        flash("Invalid credentials")
-    return render_template('login.html')
+            return redirect(url_for('browse'))
+        flash('Invalid Credentials')
+    return render_template('login.html', register=False)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        hashed_pw = generate_password_hash(request.form['password'])
+        new_user = User(username=request.form['username'], password=hashed_pw)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('login.html', register=True)
 
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
-# --- CORE LOGIC ---
-
-@app.route('/')
-def index():
-    books = Book.query.filter_by(status='Available').all()
-    return render_template('index.html', books=books)
-
-@app.route('/request_borrow/<int:book_id>', methods=['POST'])
+@app.route('/browse')
 @login_required
-def request_borrow(book_id):
-    book = Book.query.get_or_404(book_id)
-    
-    if book.status != 'Available':
-        flash("Book is already borrowed.")
-        return redirect(url_for('index'))
+def browse():
+    books = Book.query.all()
+    return render_template('browse.html', books=books)
 
+@app.route('/add_book', methods=['POST'])
+@login_required
+def add_book():
+    new_book = Book(
+        title=request.form['title'],
+        author=request.form['author'],
+        category=request.form['category'],
+        book_type=request.form['book_type'],
+        file_link=request.form.get('file_link'),
+        location=request.form.get('location'),
+        image_url=request.form.get('image_url'),
+        owner_id=current_user.id
+    )
+    db.session.add(new_book)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/borrow/<int:book_id>', methods=['POST'])
+@login_required
+def borrow(book_id):
+    book = Book.query.get(book_id)
     if book.book_type == 'Digital':
-        new_req = BorrowRequest(book_id=book_id, borrower_id=current_user.id, status='Accepted')
         book.status = 'Borrowed'
+        new_req = Request(book_id=book.id, borrower_id=current_user.id, status='Accepted')
         db.session.add(new_req)
-        db.session.commit()
-        flash("Digital book added to your dashboard!")
     else:
-        new_req = BorrowRequest(
-            book_id=book_id, 
-            borrower_id=current_user.id,
-            proposed_date=request.form.get('date'),
-            proposed_time=request.form.get('time'),
-            location=request.form.get('location'),
-            status='Pending'
-        )
+        details = f"Meet at: {request.form['date']} | {request.form['location']}"
+        new_req = Request(book_id=book.id, borrower_id=current_user.id, meeting_details=details)
         db.session.add(new_req)
-        db.session.commit()
-        flash("Request sent to owner!")
-    return redirect(url_for('index'))
+    db.session.commit()
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
     my_books = Book.query.filter_by(owner_id=current_user.id).all()
-    # Logic to see requests people sent to ME
-    incoming_requests = BorrowRequest.query.join(Book).filter(Book.owner_id == current_user.id, BorrowRequest.status == 'Pending').all()
-    # Logic to see books I AM BORROWING from others
-    borrowed_books = BorrowRequest.query.filter_by(borrower_id=current_user.id, status='Accepted').all()
-    return render_template('dashboard.html', my_books=my_books, incoming=incoming_requests, borrowed=borrowed_books)
+    borrowed = Request.query.filter_by(borrower_id=current_user.id).all()
+    incoming = Request.query.join(Book).filter(Book.owner_id == current_user.id, Request.status == 'Pending').all()
+    return render_template('dashboard.html', my_books=my_books, borrowed=borrowed, incoming=incoming)
 
-@app.route('/accept_request/<int:request_id>', methods=['POST'])
+@app.route('/action/<int:req_id>/<string:act>')
 @login_required
-def accept_request(request_id):
-    req = BorrowRequest.query.get_or_404(request_id)
-    if req.book.owner_id != current_user.id:
-        abort(403)
-    
-    req.status = 'Accepted'
-    req.book.status = 'Borrowed'
-    db.session.commit()
-    flash("Request accepted!")
-    return redirect(url_for('dashboard'))
-
-@app.route('/return_book/<int:book_id>', methods=['POST'])
-@login_required
-def return_book(book_id):
-    book = Book.query.get_or_404(book_id)
-    book.status = 'Available'
-    req = BorrowRequest.query.filter_by(book_id=book_id, status='Accepted').first()
-    if req:
+def handle_request(req_id, act):
+    req = Request.query.get(req_id)
+    if act == 'accept':
+        req.status = 'Accepted'
+        req.book.status = 'Borrowed'
+    elif act == 'return':
         req.status = 'Returned'
+        req.book.status = 'Available'
     db.session.commit()
-    flash("Book marked as returned.")
     return redirect(url_for('dashboard'))
-
-# --- DIGITAL FILE HANDLING ---
-
-@app.route('/download/<int:book_id>')
-@login_required
-def download_book(book_id):
-    book = Book.query.get_or_404(book_id)
-    # Only allow download if they have an 'Accepted' borrow request
-    req = BorrowRequest.query.filter_by(book_id=book_id, borrower_id=current_user.id, status='Accepted').first()
-    if req and book.file_path:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], book.file_path)
-    abort(403)
-
-# --- ADMIN & UTILS ---
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
-            abort(403)
-        return f(*args, **kwargs)
-    return decorated_function
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
-
-@app.route('/add_book', methods=['GET', 'POST'])
-@login_required
-def add_book():
-    if request.method == 'POST':
-        title = request.form.get('title')
-        author = request.form.get('author')
-        book_type = request.form.get('book_type')
-        file_path = None
-
-        if book_type == 'Digital':
-            file = request.files.get('book_file')
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                    os.makedirs(app.config['UPLOAD_FOLDER'])
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                file_path = filename
-
-        new_book = Book(title=title, author=author, book_type=book_type, file_path=file_path, owner_id=current_user.id)
-        db.session.add(new_book)
-        db.session.commit()
-        return redirect(url_for('dashboard'))
-    return render_template('add_book.html')
-
-@app.route('/admin_panel')
-@login_required
-@admin_required
-def admin_panel():
-    return render_template('admin.html', books=Book.query.all(), users=User.query.all())
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        if not User.query.filter_by(username='admin').first():
+            admin = User(username='admin', password=generate_password_hash('admin123'), role='Admin')
+            db.session.add(admin)
+            db.session.commit()
     app.run(debug=True)

@@ -1,64 +1,50 @@
+:root {
+    --win-bg: #f3f3f3;
+    --win-card: rgba(255, 255, 255, 0.7);
+    --win-accent: #0078d4;
+    --win-border: rgba(0, 0, 0, 0.1);
+}
+
 body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f8f9fa;
+    background: url('https://i.imgur.com/3mY9I5k.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+    height: 100vh;
     margin: 0;
-    padding: 0;
 }
 
-nav {
-    background-color: #007bff;
-    padding: 15px 50px;
-    display: flex;
-    gap: 20px;
-}
-
-nav a {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.container {
-    max-width: 1100px;
-    margin: 30px auto;
-    padding: 0 20px;
-}
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 25px;
-}
-
-.card {
-    background: white;
-    padding: 20px;
+/* Mica Effect Glassmorphism */
+.mica-container {
+    background: var(--win-card);
+    backdrop-filter: blur(30px) saturate(125%);
+    border: 1px solid var(--win-border);
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
-.card:hover {
-    transform: translateY(-5px);
+.sidebar {
+    width: 260px;
+    background: rgba(243, 243, 243, 0.5);
+    backdrop-filter: blur(20px);
 }
 
-.btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background: #007bff;
+.btn-primary {
+    background-color: var(--win-accent);
     color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
+    border-radius: 6px;
+    padding: 8px 16px;
+    transition: all 0.2s;
 }
 
-.flash {
-    padding: 10px;
-    background: #d4edda;
-    color: #155724;
-    border-radius: 5px;
-    margin-bottom: 20px;
+.btn-primary:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.book-card {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.book-card:hover {
+    transform: translateY(-5px);
 }

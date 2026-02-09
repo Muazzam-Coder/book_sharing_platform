@@ -1,34 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Book Sharing Platform</title>
-    <!-- Use the url_for helper -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --win-bg: #f3f3f3; --win-accent: #0078d4; }
+        body { 
+            background: url('https://i.imgur.com/3mY9I5k.jpg') center/cover no-repeat fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh; overflow: hidden;
+        }
+        .mica {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(30px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+        }
+        .sidebar-item:hover { background: rgba(0,0,0,0.05); border-radius: 8px; }
+        .win-btn { background: var(--win-accent); color: white; border-radius: 4px; transition: 0.2s; }
+        .win-btn:hover { opacity: 0.9; transform: scale(0.98); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+    </style>
 </head>
-<body>
-    <nav>
-        <a href="{{ url_for('index') }}">Home</a>
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
-        {% else %}
-            <a href="{{ url_for('login') }}">Login</a>
-            <a href="{{ url_for('register') }}">Register</a>
-        {% endif %}
+<body class="flex p-4 gap-4">
+    <!-- Sidebar -->
+    <nav class="mica w-64 p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-10 px-2">
+                <div class="w-8 h-8 bg-blue-500 rounded-lg shadow-lg"></div>
+                <h1 class="font-bold text-xl tracking-tight">BookShare</h1>
+            </div>
+            <div class="space-y-2">
+                <a href="/browse" class="sidebar-item flex items-center gap-3 p-3 transition text-gray-700">
+                    <i class="fa-solid fa-magnifying-glass"></i> Browse Books
+                </a>
+                <a href="/dashboard" class="sidebar-item flex items-center gap-3 p-3 transition text-gray-700">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="p-3 bg-black/5 rounded-xl flex items-center gap-3">
+            <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+            <div class="overflow-hidden">
+                <p class="text-xs font-bold truncate">{{ current_user.username }}</p>
+                <a href="/logout" class="text-[10px] text-red-500 uppercase font-bold">Sign Out</a>
+            </div>
+        </div>
     </nav>
 
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for message in messages %}
-              <div class="flash">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <!-- THIS IS THE IMPORTANT PART -->
-        {% block content %}{% endblock %} 
-    </div>
+    <!-- Content Area -->
+    <main class="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div class="mica flex-1 p-8 overflow-y-auto">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 </body>
 </html>
